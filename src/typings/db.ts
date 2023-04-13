@@ -14,4 +14,7 @@ export type QueryResult<T> = T extends DefaultQueryResult ? DefaultQueryResult :
 
 export type cache<Raw extends boolean = true> = {
     notes: If<Raw, string, string[]>;
+    devoirs: If<Raw, string, string[]>;
+    messages: If<Raw, string, string[]>;
+    cours: If<Raw, string, string[]>;
 }
