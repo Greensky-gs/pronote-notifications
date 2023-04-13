@@ -9,6 +9,7 @@ declare global {
             dbp: string;
             dbh: string;
             channelId: string;
+            userId: string;
         }
     }
 }
