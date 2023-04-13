@@ -11,7 +11,8 @@ export const client = new AmethystClient({
     token: process.env.token,
     commandsFolder: './dist/commands',
     eventsFolder: './dist/events',
-    debug: true
+    debug: true,
+    autocompleteListenersFolder: './dist/autocompletes'
 });
 
 client.start({});

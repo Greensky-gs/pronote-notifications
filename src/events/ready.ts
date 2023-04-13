@@ -1,6 +1,6 @@
 import { AmethystEvent, log4js } from "amethystjs";
 import { checkDatabase } from "../utils/checkDb";
-import { login } from "pronote-api-maintained";
+import { PronoteStudentSession, login } from "pronote-api-maintained";
 import { ColorResolvable, EmbedBuilder, TextChannel } from "discord.js";
 import { Cache } from "../managers/cache";
 
@@ -10,6 +10,8 @@ export default new AmethystEvent('ready', async(client) => {
     const session = await login('https://0310047h.index-education.net/pronote', process.env.prnusername, process.env.password, 'ac-toulouse');
     const channel = await client.channels.fetch(process.env.channelId) as TextChannel;
 
+    console.log("[*] Session and channel logged in")
+
     if (!channel) {
         throw new Error("Salon introuvable")
     }
@@ -17,6 +19,8 @@ export default new AmethystEvent('ready', async(client) => {
     if (!session) {
         throw new Error("Session introuvable");
     }
+
+    client.session = session;
 
     session.setKeepAlive(true, log4js.trace)
     const cache = new Cache();
@@ -166,3 +170,8 @@ export default new AmethystEvent('ready', async(client) => {
     }, 300000)
 })
 
+declare module 'discord.js' {
+    interface Client {
+        session: PronoteStudentSession;
+    }
+}
