@@ -67,7 +67,7 @@ export class Cache {
 
         setInterval(() => {
             query(`UPDATE cache SET notes='${JSON.stringify(this._marks)}', devoirs='${JSON.stringify(this._works)}', messages='${JSON.stringify(this.messages)}', cours='${JSON.stringify(this._cours)}'`);
-        }, 10000)
+        }, 300000)
     }
     private async fillCache() {
         const results = await query<cache>(`SELECT * FROM cache`);
