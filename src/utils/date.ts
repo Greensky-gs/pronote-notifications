@@ -1,5 +1,5 @@
 export const getDayName = (n: number) => {
-    return ['lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi', 'dimanche'][n - 1];
+    return ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'][n];
 }
 export const getMonthName = (n: number) => {
     return ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'][n];
@@ -57,4 +57,8 @@ export const secondsToWeeks = (time: number) => {
         str += v + (a[i + 1] ? (a[i + 2] ? ', ' : ' et ') : '');
     });
     return str;
+}
+export const formatHour = (d: Date, displaySeconds?: boolean) => {
+    const format = (n: number) => n < 10 ? `0${n}` : `${n}`;
+    return `${format(d.getHours())}h${format(d.getMinutes())}${displaySeconds ? `m${format(d.getSeconds())}` : ''}`
 }

@@ -5,7 +5,7 @@ export class Cache {
     private _marks: string[] = [];
     private _works: string[] = [];
     private messages: string[] = []
-    private _cours: string[] = [];
+    private _cours: {id: string; away: boolean; canceled: boolean; duplicated: boolean;}[] = [];
 
     constructor() {
         this.start();
@@ -50,11 +50,31 @@ export class Cache {
     }
     
     public isCoursCached(id: string) {
-        return this._cours.includes(id)
+        return this._cours.find(x => x.id === id);
     }
-    public addCours(id: string) {
+    public addCours({ id, isAway, isCancelled, hasDuplicate }: { id: string; isAway: boolean; isCancelled: boolean; hasDuplicate: boolean; }) {
         if (this.isCoursCached(id)) return this;
-        this._cours.push(id)
+        this._cours.push({
+            id,
+            away: isAway,
+            canceled: isCancelled,
+            duplicated: hasDuplicate
+        })
+
+        return this;
+    }
+    public updateCours({ id, away, cancelled, duplicated }: { id: string; away?: boolean; cancelled?: boolean; duplicated?: boolean; }) {
+        if (!this.isCoursCached(id)) return this;
+        const cours = this._cours.find(x => x.id);
+        const index = this._cours.indexOf(cours);
+
+        const isNull = (x: unknown) => [undefined, null].includes(x);
+        this._cours[index] = {
+            ...cours,
+            away: isNull(away) ? cours.away : away,
+            canceled: isNull(cancelled) ? cours.canceled : cancelled,
+            duplicated: isNull(duplicated) ? cours.duplicated : duplicated
+        };
 
         return this;
     }

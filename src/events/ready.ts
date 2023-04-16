@@ -3,6 +3,9 @@ import { checkDatabase } from "../utils/checkDb";
 import { PronoteStudentSession, login } from "pronote-api-maintained";
 import { ColorResolvable, EmbedBuilder, TextChannel } from "discord.js";
 import { Cache } from "../managers/cache";
+import { formatHour, getDayName, getMonthName } from "../utils/date";
+
+log4js.config('displayTimeFormat', (time) => `[${getDayName(time.getDay())} ${time.getDate()} ${getMonthName(time.getMonth())} ${time.getFullYear()} à ${time.getHours()}h${time.getMinutes()}m${time.getSeconds()}s]`);
 
 export default new AmethystEvent('ready', async(client) => {
     await checkDatabase();
@@ -133,8 +136,111 @@ export default new AmethystEvent('ready', async(client) => {
         const cours = await session.timetable(new Date(), new Date(new Date().setHours(7) + 172800000))
         if (!cours) return log4js.trace("Cours inaccessibles");
 
+        cours.filter(c => {
+            const cours = cache.cours.find(x => x.id === c.id);
+
+            if (!cache.isCoursCached(c.id)) return false;
+            if (cours.away !== c.isAway) return true;
+            if (cours.canceled !== c.isCancelled) return true
+            if (cours.duplicated !== c.hasDuplicate) return true;
+        }).forEach((cours) => {
+            const old = cache.cours.find(c => c.id === cours.id);
+            if (!old) return log4js.trace(`Cours introuvable dans le cache (id: ${cours.id})`);
+
+            cache.updateCours({
+                id: cours.id,
+                duplicated: cours.hasDuplicate,
+                cancelled: cours.isCancelled,
+                away: cours.isAway
+            });
+
+            if (cours.hasDuplicate && !old.duplicated) {
+                channel.send({
+                    embeds: [
+                        new EmbedBuilder()
+                            .setTitle("Cours remplacé")
+                            .setDescription(`Le cours de ${(cours.subject ?? '').toLowerCase()} du ${getDayName(cours.from.getDay())} ${cours.from.getDate()} ${getMonthName(cours.from.getMonth())} à ${formatHour(cours.from)} vient d'être remplacé`)
+                            .setColor(cours.color as ColorResolvable ?? 'Orange')
+                            .setTimestamp(cours.from)
+                            .setFields(
+                                {
+                                    name: 'Statut',
+                                    value: cours.status ?? 'Pas de statut',
+                                    inline: false
+                                }
+                            )
+                    ]
+                }).catch(log4js.trace);
+            }
+            if (!cours.hasDuplicate && old.duplicated) {
+                channel.send({
+                    embeds: [
+                        new EmbedBuilder()
+                            .setTitle("Annulation de cours remplacé")
+                            .setDescription(`Le remplacement de ${(cours.subject ?? '').toLowerCase()} du ${getDayName(cours.from.getDay())} ${cours.from.getDate()} ${getMonthName(cours.from.getMonth())} à ${formatHour(cours.from)} a été annulé. Je vous conseille d'aller voir votre emploi du temps`)
+                            .setColor(cours.color as ColorResolvable ?? 'Orange')
+                            .setTimestamp(cours.from)
+                            .setFields({
+                                name: 'Statut',
+                                value: cours.status ?? 'Pas de statut',
+                                inline: false
+                            })
+                    ]
+                }).catch(log4js.trace)
+            }
+            if (cours.isAway && !old.away) {
+                channel.send({
+                    embeds: [
+                        new EmbedBuilder()
+                            .setTitle("Professeur absent")
+                            .setDescription(`Le professeur du cours de ${(cours.subject ?? '').toLowerCase()} le ${getDayName(cours.from.getDay())} ${cours.from.getDate()} ${getMonthName(cours.from.getMonth())} à ${formatHour(cours.from)} est absent`)
+                            .setColor(cours.color as ColorResolvable ?? 'Orange')
+                            .setTimestamp(cours.from)
+                    ]
+                }).catch(log4js.trace);
+            }
+            if (!cours.isAway && old.away) {
+                channel.send({
+                    embeds: [
+                        new EmbedBuilder()
+                            .setTitle("Absence annulée")
+                            .setDescription(`Le professeur du cours de ${(cours.subject ?? '').toLowerCase()} le ${getDayName(cours.from.getDay())} ${cours.from.getDate()} ${getMonthName(cours.from.getMonth())} à ${formatHour(cours.from)} n'est plus marqué comme absent`)
+                            .setColor(cours.color as ColorResolvable ?? 'Orange')
+                            .setTimestamp(cours.from)
+                    ]
+                }).catch(log4js.trace);
+            }
+            if (cours.isCancelled && !old.canceled) {
+                channel.send({
+                    embeds: [
+                        new EmbedBuilder()
+                            .setTitle("Cours annulé")
+                            .setDescription(`Le cours de ${(cours.subject ?? '').toLowerCase()} le ${getDayName(cours.from.getDay())} ${cours.from.getDate()} ${getMonthName(cours.from.getMonth())} à ${formatHour(cours.from)} est annulé`)
+                            .setColor(cours.color as ColorResolvable ?? 'Orange')
+                            .setTimestamp(cours.from)
+                    ]
+                }).catch(log4js.trace);
+            }
+            if (!cours.isCancelled && old.canceled) {
+                channel.send({
+                    embeds: [
+                        new EmbedBuilder()
+                            .setTitle("Cours rétabli")
+                            .setDescription(`Le cours de ${(cours.subject ?? '').toLowerCase()} le ${getDayName(cours.from.getDay())} ${cours.from.getDate()} ${getMonthName(cours.from.getMonth())} à ${formatHour(cours.from)} est rétabli`)
+                            .setColor(cours.color as ColorResolvable ?? 'Orange')
+                            .setTimestamp(cours.from)
+                    ]
+                }).catch(log4js.trace);
+            }
+        })
         cours.filter(c => !cache.isCoursCached(c.id)).forEach((cours) => {
-            cache.addCours(cours.id);
+            cache.addCours({
+                id: cours.id,
+                isAway: cours.isAway,
+                hasDuplicate: cours.hasDuplicate,
+                isCancelled: cours.isCancelled
+            });
+
             if (cours.isCancelled || cours.isAway) {
                 channel.send({
                     embeds: [

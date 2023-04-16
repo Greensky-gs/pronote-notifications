@@ -16,5 +16,5 @@ export type cache<Raw extends boolean = true> = {
     notes: If<Raw, string, string[]>;
     devoirs: If<Raw, string, string[]>;
     messages: If<Raw, string, string[]>;
-    cours: If<Raw, string, string[]>;
+    cours: If<Raw, string, { id: string; away: boolean; canceled: boolean; duplicated: boolean; }[]>;
 }
