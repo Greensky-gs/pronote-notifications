@@ -273,7 +273,7 @@ export default new AmethystEvent('ready', async(client) => {
         fetchHomeworks();
         fetchCommunications();
         fetchClasses();
-    }, 300000)
+    }, 275000)
 })
 
 declare module 'discord.js' {
